@@ -41,7 +41,7 @@ function Particles() {
 
                 // return to sphere
                 currentPosition[i] += (targetPosition[i] - x) * 0.02
-                currentPosition[i + 1] += (targetPosition[i + 1] - y) * 0.02
+                currentPosition[i + 1] += (targetPosition[i + 1] - y) * 0.02 //linear interpolation to move the particles towards their target position
                 currentPosition[i + 2] += (targetPosition[i + 2] - z) * 0.02
 
                 const forceRadius = 1.5;
@@ -51,7 +51,7 @@ function Particles() {
 
                     const force = (forceRadius - distance) * 0.05
 
-                    currentPosition[i] -= directionX * force
+                    currentPosition[i] -= directionX * force //force motion
                     currentPosition[i + 1] -= directionY * force
                     currentPosition[i + 2] -= directionZ * force
                 }
