@@ -8,9 +8,12 @@
 import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
+import { useThree } from "@react-three/fiber";
+
 
 function Particles() {
     const particlesRef = useRef(null);
+    const { mouse } = useThree()
 
     useFrame((state, delta) => {
         if (particlesRef.current) {
@@ -18,11 +21,43 @@ function Particles() {
             let currentPosition = particlesRef.current.geometry.attributes.position.array;; //current position of the particles
             const targetPosition = particles.endPositionArray; //target position of the particles
             console.log(currentPosition, targetPosition)
-            for (let i = 0; i < currentPosition.length; i++) {
-                currentPosition[i] += (targetPosition[i] - currentPosition[i]) * 0.02;
-            }
 
+
+            for (let i = 0; i < currentPosition.length; i += 3) {
+
+                const x = currentPosition[i]
+                const y = currentPosition[i + 1]
+                const z = currentPosition[i + 2]
+
+                const dx = mouse.x - x
+                const dy = mouse.y - y
+                const dz = -z
+
+                const distance = Math.sqrt(dx * dx + dy * dy + dz * dz)
+
+                const directionX = dx / distance
+                const directionY = dy / distance
+                const directionZ = dz / distance
+
+                // return to sphere
+                currentPosition[i] += (targetPosition[i] - x) * 0.02
+                currentPosition[i + 1] += (targetPosition[i + 1] - y) * 0.02
+                currentPosition[i + 2] += (targetPosition[i + 2] - z) * 0.02
+
+                const forceRadius = 1.5;
+
+                // mouse repulsion
+                if (distance < forceRadius && distance > 0.001) {
+
+                    const force = (forceRadius - distance) * 0.05
+
+                    currentPosition[i] -= directionX * force
+                    currentPosition[i + 1] -= directionY * force
+                    currentPosition[i + 2] -= directionZ * force
+                }
+            }
             particlesRef.current.geometry.attributes.position.needsUpdate = true;
+            //  console.log(mouse.x, mouse.y)
         }
     })
 
