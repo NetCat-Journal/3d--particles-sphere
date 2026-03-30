@@ -19,19 +19,19 @@ import { useThree } from "@react-three/fiber";
 
 function Particles() {
     const particlesRef = useRef(null);
-    const { mouse } = useThree()
+    const { mouse } = useThree();
+    const velocityRef = useRef(new Float32Array(12000 * 3)); //velocity of the particles
 
     useFrame((state, delta) => {
         if (particlesRef.current) {
             particlesRef.current.rotation.y += delta * 0.1; // Rotate the particles around the y-axis
-
             let currentPosition = particlesRef.current.geometry.attributes.position.array;; //current position of the particles
             const targetPosition = particles.endPositionArray; //target position of the particles
             console.log(currentPosition, targetPosition)
+            const velocity = velocityRef.current
 
 
             for (let i = 0; i < currentPosition.length; i += 3) {
-
                 const x = currentPosition[i]
                 const y = currentPosition[i + 1]
                 const z = currentPosition[i + 2]
@@ -46,30 +46,63 @@ function Particles() {
                 const directionY = dy / distance
                 const directionZ = dz / distance
 
-                // return to sphere
-                //currentPosition[i] += (targetPosition[i] - x) * 0.02
-                //currentPosition[i + 1] += (targetPosition[i + 1] - y) * 0.02 //linear interpolation to move the particles towards their target position
-                //currentPosition[i + 2] += (targetPosition[i + 2] - z) * 0.02
-
                 const forceRadius = 1.2;
 
                 if (distance < forceRadius && distance > 0.001) {
-                    // repulsion + swirl only
                     const force = (forceRadius - distance) * 0.05
-                    const swirlStrength = 0.05 * (1 / (distance + 0.5))
+                    const swirlStrength = 0.08 * (1 / (distance + 0.5))
+                    //without velocity just dirrect movement 
+                    //currentPosition[i] -= directionX * force
+                    //currentPosition[i + 1] -= directionY * force
+                    //currentPosition[i + 2] -= directionZ * force
 
-                    currentPosition[i] -= directionX * force
-                    currentPosition[i + 1] -= directionY * force
-                    currentPosition[i + 2] -= directionZ * force
+                    //currentPosition[i] += -directionY * swirlStrength  // swirlX
+                    //currentPosition[i + 1] += directionX * swirlStrength  // swirlY
 
-                    currentPosition[i] += -directionY * swirlStrength  // swirlX
-                    currentPosition[i + 1] += directionX * swirlStrength  // swirlY
-                } else {
-                    // lerp only when mouse is far away
-                    currentPosition[i] += (targetPosition[i] - x) * 0.02
-                    currentPosition[i + 1] += (targetPosition[i + 1] - y) * 0.02
-                    currentPosition[i + 2] += (targetPosition[i + 2] - z) * 0.02
+                    //with velocity
+
+                    velocity[i] -= directionX * force
+                    velocity[i + 1] -= directionY * force
+                    velocity[i + 2] -= directionZ * force
+
+                    velocity[i] += -directionY * swirlStrength  // swirlX
+                    velocity[i + 1] += directionX * swirlStrength  // swirlY
+
                 }
+                // lerp only when mouse is far away without velocity
+                //currentPosition[i] += (targetPosition[i] - x) * 0.02
+                //currentPosition[i + 1] += (targetPosition[i + 1] - y) * 0.02
+                //currentPosition[i + 2] += (targetPosition[i + 2] - z) * 0.02
+                // with velocity
+                velocity[i] += (targetPosition[i] - x) * 0.02
+                velocity[i + 1] += (targetPosition[i + 1] - y) * 0.02
+                velocity[i + 2] += (targetPosition[i + 2] - z) * 0.02
+
+
+                // Damping — slows velocity over time so particles don't fly forever
+                velocity[i] *= 0.92
+                velocity[i + 1] *= 0.92
+                velocity[i + 2] *= 0.92
+
+                const maxSpeed = 0.05
+
+                const vx = velocity[i]
+                const vy = velocity[i + 1]
+                const vz = velocity[i + 2]
+
+                const speed = Math.sqrt(vx * vx + vy * vy + vz * vz)
+
+                if (speed > maxSpeed) {
+                    const scale = maxSpeed / speed
+                    velocity[i] *= scale
+                    velocity[i + 1] *= scale
+                    velocity[i + 2] *= scale
+                }
+
+                // Apply velocity to position
+                currentPosition[i] += velocity[i]
+                currentPosition[i + 1] += velocity[i + 1]
+                currentPosition[i + 2] += velocity[i + 2]
             }
             particlesRef.current.geometry.attributes.position.needsUpdate = true;
             //  console.log(mouse.x, mouse.y)
