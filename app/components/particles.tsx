@@ -40,7 +40,10 @@ function Particles() {
                 const dy = mouse.y * 3 - y
                 const dz = -z
 
-                const distance = Math.sqrt(dx * dx + dy * dy + dz * dz)
+                const distance = Math.max(
+                    Math.sqrt(dx * dx + dy * dy + dz * dz),
+                    0.05
+                )
 
                 const directionX = dx / distance
                 const directionY = dy / distance
@@ -50,7 +53,8 @@ function Particles() {
 
                 if (distance < forceRadius && distance > 0.001) {
                     const force = (forceRadius - distance) * 0.05
-                    const swirlStrength = 0.08 * (1 / (distance + 0.5))
+                    const strength = (forceRadius - distance) / forceRadius //linear falloff
+                    const swirlStrength = strength * 0.03
                     //without velocity just dirrect movement 
                     //currentPosition[i] -= directionX * force
                     //currentPosition[i + 1] -= directionY * force
@@ -80,9 +84,9 @@ function Particles() {
 
 
                 // Damping — slows velocity over time so particles don't fly forever
-                velocity[i] *= 0.92
-                velocity[i + 1] *= 0.92
-                velocity[i + 2] *= 0.92
+                velocity[i] *= 0.95
+                velocity[i + 1] *= 0.95
+                velocity[i + 2] *= 0.95
 
                 const maxSpeed = 0.05
 
