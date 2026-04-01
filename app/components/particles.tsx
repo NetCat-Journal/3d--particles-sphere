@@ -15,12 +15,27 @@ import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { useThree } from "@react-three/fiber";
+import { useEffect } from "react";
 
 
 function Particles() {
     const particlesRef = useRef(null);
     const { mouse } = useThree();
     const velocityRef = useRef(new Float32Array(12000 * 3)); //velocity of the particles
+    const explodeRef = useRef(false) //flag to trigger explosion
+
+    useEffect(() => {
+        const handleClick = () => {
+            explodeRef.current = true
+
+            setTimeout(() => {
+                explodeRef.current = false
+            }, 6000) // short burst
+        }
+
+        window.addEventListener("click", handleClick)
+        return () => window.removeEventListener("click", handleClick)
+    }, [])
 
     useFrame((state, delta) => {
         if (particlesRef.current) {
@@ -38,7 +53,7 @@ function Particles() {
 
                 const dx = mouse.x * 3 - x //multiple by 3 makes mouse recation all over the sphere, since r=1.5 and mouse.x just covet between -1 and 1  so multiply by 3 makes the mouse reaction cover the whole sphere, otherwise it will only react to the center of the sphere    
                 const dy = mouse.y * 3 - y
-                const dz = -z
+                const dz = 0 //since mouse is 2D, we can only get the x and y position of the mouse, so we set the z position to 0, which means the mouse will only affect the particles in the x and y direction, and the particles will not be affected in the z direction, this creates a more natural and intuitive interaction as the particles will react to the mouse movement in a way that feels more realistic and engaging.  
 
                 const distance = Math.max(
                     Math.sqrt(dx * dx + dy * dy + dz * dz),
@@ -77,16 +92,33 @@ function Particles() {
                 //currentPosition[i] += (targetPosition[i] - x) * 0.02
                 //currentPosition[i + 1] += (targetPosition[i + 1] - y) * 0.02
                 //currentPosition[i + 2] += (targetPosition[i + 2] - z) * 0.02
-                // with velocity
-                velocity[i] += (targetPosition[i] - x) * 0.02
-                velocity[i + 1] += (targetPosition[i + 1] - y) * 0.02
-                velocity[i + 2] += (targetPosition[i + 2] - z) * 0.02
 
+                // with velocity
+                //will have this spring effect when mouse move away, the particles will spring back to their original position, the strength of the spring is determined by the distance between the current position and the target position, the farther away the particle is from its target position, the stronger the spring force will be, which creates a natural and dynamic movement as the particles are attracted back to their original positions while still being influenced by the mouse interaction and explosion effect.
+                //velocity[i] += (targetPosition[i] - x) * 0.02
+                //velocity[i + 1] += (targetPosition[i + 1] - y) * 0.02
+                //velocity[i + 2] += (targetPosition[i + 2] - z) * 0.02
+
+                //and this when the explosion effect is triggered, the particles will be pushed away from the center of the sphere, creating a burst effect. The explosion force is applied in the direction away from the center, and its strength is determined by the distance of the particle from the center, with a random factor added to create a more natural and chaotic explosion. The particles will then be influenced by both the explosion force and the spring force that pulls them back towards their original positions, resulting in a dynamic and visually interesting movement as they react to both the explosion and the mouse interaction.
+                if (!explodeRef.current) {
+                    velocity[i] += (targetPosition[i] - x) * 0.02
+                    velocity[i + 1] += (targetPosition[i + 1] - y) * 0.02
+                    velocity[i + 2] += (targetPosition[i + 2] - z) * 0.02
+                }
+
+                //explosion effect when click
+                if (explodeRef.current) {
+                    const explosionForce = 0.02;
+
+                    velocity[i] += (Math.random() - 0.5) * explosionForce
+                    velocity[i + 1] += (Math.random() - 0.5) * explosionForce
+                    velocity[i + 2] += (Math.random() - 0.5) * explosionForce
+                }
 
                 // Damping — slows velocity over time so particles don't fly forever
-                velocity[i] *= 0.95
-                velocity[i + 1] *= 0.95
-                velocity[i + 2] *= 0.95
+                velocity[i] *= 0.99
+                velocity[i + 1] *= 0.99
+                velocity[i + 2] *= 0.99
 
                 const maxSpeed = 0.05
 
