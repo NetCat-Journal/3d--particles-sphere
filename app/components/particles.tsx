@@ -30,7 +30,7 @@ function Particles() {
 
             setTimeout(() => {
                 explodeRef.current = false
-            }, 6000) // short burst
+            }, 2000) // short burst
         }
 
         window.addEventListener("click", handleClick)
@@ -64,7 +64,7 @@ function Particles() {
                 const directionY = dy / distance
                 const directionZ = dz / distance
 
-                const forceRadius = 1.2;
+                const forceRadius = 0.5;
 
                 if (distance < forceRadius && distance > 0.001) {
                     const force = (forceRadius - distance) * 0.05
@@ -99,26 +99,26 @@ function Particles() {
                 //velocity[i + 1] += (targetPosition[i + 1] - y) * 0.02
                 //velocity[i + 2] += (targetPosition[i + 2] - z) * 0.02
 
-                //and this when the explosion effect is triggered, the particles will be pushed away from the center of the sphere, creating a burst effect. The explosion force is applied in the direction away from the center, and its strength is determined by the distance of the particle from the center, with a random factor added to create a more natural and chaotic explosion. The particles will then be influenced by both the explosion force and the spring force that pulls them back towards their original positions, resulting in a dynamic and visually interesting movement as they react to both the explosion and the mouse interaction.
+                //effect when not click come back to original position to the sphare 
                 if (!explodeRef.current) {
-                    velocity[i] += (targetPosition[i] - x) * 0.02
-                    velocity[i + 1] += (targetPosition[i + 1] - y) * 0.02
-                    velocity[i + 2] += (targetPosition[i + 2] - z) * 0.02
+                    velocity[i] += (targetPosition[i] - x) * 0.003 //im heigher then slower particles going to there position slower 
+                    velocity[i + 1] += (targetPosition[i + 1] - y) * 0.003
+                    velocity[i + 2] += (targetPosition[i + 2] - z) * 0.003
                 }
 
                 //explosion effect when click
                 if (explodeRef.current) {
-                    const explosionForce = 0.02;
+                    const explosionForce = 0.2; //how hard particles are push
 
-                    velocity[i] += (Math.random() - 0.5) * explosionForce
-                    velocity[i + 1] += (Math.random() - 0.5) * explosionForce
-                    velocity[i + 2] += (Math.random() - 0.5) * explosionForce
+                    velocity[i] += (Math.random() - 0.5) * explosionForce + (Math.random() - 0.5)//Random direction explosion
+                    velocity[i + 1] += (Math.random() - 0.5) * explosionForce + (Math.random() - 0.5)
+                    velocity[i + 2] += (Math.random() - 0.5) * explosionForce + (Math.random() - 0.5)
                 }
 
                 // Damping — slows velocity over time so particles don't fly forever
-                velocity[i] *= 0.99
-                velocity[i + 1] *= 0.99
-                velocity[i + 2] *= 0.99
+                velocity[i] *= 0.88
+                velocity[i + 1] *= 0.88
+                velocity[i + 2] *= 0.88
 
                 const maxSpeed = 0.05
 
