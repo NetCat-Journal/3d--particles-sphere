@@ -23,26 +23,30 @@ function Particles() {
     const { mouse } = useThree();
     const velocityRef = useRef(new Float32Array(12000 * 3)); //velocity of the particles
     const explodeRef = useRef(false) //flag to trigger explosion
+    const explosionStrengthRef = useRef(1) //store 1 in variable 
 
-    useEffect(() => {
-        const handleClick = () => {
-            explodeRef.current = true
+    //for explosion on click 
+    //useEffect(() => {
+    //     const handleClick = () => {
+    //         explodeRef.current = true
 
-            setTimeout(() => {
-                explodeRef.current = false
-            }, 2000) // short burst
-        }
+    //         setTimeout(() => {
+    //             explodeRef.current = false
+    //         }, 2000) // short burst
+    //     }
 
-        window.addEventListener("click", handleClick)
-        return () => window.removeEventListener("click", handleClick)
-    }, [])
+    //    window.addEventListener("click", handleClick)
+    //    return () => window.removeEventListener("click", handleClick)
+    //}, [])
 
     useFrame((state, delta) => {
+
+        explosionStrengthRef.current *= 0.96 //explosion strength decrease over time
         if (particlesRef.current) {
             particlesRef.current.rotation.y += delta * 0.1; // Rotate the particles around the y-axis
             let currentPosition = particlesRef.current.geometry.attributes.position.array;; //current position of the particles
             const targetPosition = particles.endPositionArray; //target position of the particles
-            console.log(currentPosition, targetPosition)
+            //console.log(currentPosition, targetPosition)
             const velocity = velocityRef.current
 
 
@@ -100,25 +104,41 @@ function Particles() {
                 //velocity[i + 2] += (targetPosition[i + 2] - z) * 0.02
 
                 //effect when not click come back to original position to the sphare 
-                if (!explodeRef.current) {
-                    velocity[i] += (targetPosition[i] - x) * 0.003 //im heigher then slower particles going to there position slower 
+                //if (!explodeRef.current) {
+                //    velocity[i] += (targetPosition[i] - x) * 0.003 //im heigher then slower particles going to there position slower 
+                //    velocity[i + 1] += (targetPosition[i + 1] - y) * 0.003
+                //    velocity[i + 2] += (targetPosition[i + 2] - z) * 0.003
+                // }
+
+                //explosion effect when click
+                //if (explodeRef.current) {
+                //    const explosionForce = 0.2; //how hard particles are push
+
+                //    velocity[i] += (Math.random() - 0.5) * explosionForce + (Math.random() - 0.5)//Random direction explosion
+                //    velocity[i + 1] += (Math.random() - 0.5) * explosionForce + (Math.random() - 0.5)
+                //    velocity[i + 2] += (Math.random() - 0.5) * explosionForce + (Math.random() - 0.5)
+                // }
+
+
+
+                if (explosionStrengthRef.current > 0.001) {
+                    const explosionForce = 1.5 * explosionStrengthRef.current; //how hard particles are push
+
+                    velocity[i] += (Math.random() - 0.5) * explosionForce + (Math.random() - 0.5) * explosionStrengthRef.current //Random direction explosion
+                    velocity[i + 1] += (Math.random() - 0.5) * explosionForce + (Math.random() - 0.5) * explosionStrengthRef.current
+                    velocity[i + 2] += (Math.random() - 0.5) * explosionForce + (Math.random() - 0.5) * explosionStrengthRef.current
+                }
+
+                if (explosionStrengthRef.current < 0.2) { //return of particles  
+                    velocity[i] += (targetPosition[i] - x) * 0.003
                     velocity[i + 1] += (targetPosition[i + 1] - y) * 0.003
                     velocity[i + 2] += (targetPosition[i + 2] - z) * 0.003
                 }
 
-                //explosion effect when click
-                if (explodeRef.current) {
-                    const explosionForce = 0.2; //how hard particles are push
-
-                    velocity[i] += (Math.random() - 0.5) * explosionForce + (Math.random() - 0.5)//Random direction explosion
-                    velocity[i + 1] += (Math.random() - 0.5) * explosionForce + (Math.random() - 0.5)
-                    velocity[i + 2] += (Math.random() - 0.5) * explosionForce + (Math.random() - 0.5)
-                }
-
                 // Damping — slows velocity over time so particles don't fly forever
-                velocity[i] *= 0.88
-                velocity[i + 1] *= 0.88
-                velocity[i + 2] *= 0.88
+                velocity[i] *= 0.96
+                velocity[i + 1] *= 0.96
+                velocity[i + 2] *= 0.96
 
                 const maxSpeed = 0.05
 
