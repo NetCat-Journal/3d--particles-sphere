@@ -122,17 +122,17 @@ function Particles() {
 
 
                 if (explosionStrengthRef.current > 0.001) {
-                    const explosionForce = 1.5 * explosionStrengthRef.current; //how hard particles are push
+                    const explosionForce = 0.12 //how hard particles are push
 
-                    velocity[i] += (Math.random() - 0.5) * explosionForce + (Math.random() - 0.5) * explosionStrengthRef.current //Random direction explosion
-                    velocity[i + 1] += (Math.random() - 0.5) * explosionForce + (Math.random() - 0.5) * explosionStrengthRef.current
-                    velocity[i + 2] += (Math.random() - 0.5) * explosionForce + (Math.random() - 0.5) * explosionStrengthRef.current
+                    velocity[i] += x * explosionForce + (Math.random() - 0.5) * 0.5//Random direction explosion
+                    velocity[i + 1] += y * explosionForce + (Math.random() - 0.5) * 0.5
+                    velocity[i + 2] += z * explosionForce + (Math.random() - 0.5) * 0.5
                 }
 
                 if (explosionStrengthRef.current < 0.2) { //return of particles  
-                    velocity[i] += (targetPosition[i] - x) * 0.003
-                    velocity[i + 1] += (targetPosition[i + 1] - y) * 0.003
-                    velocity[i + 2] += (targetPosition[i + 2] - z) * 0.003
+                    velocity[i] += (targetPosition[i] - x) * 0.0015 //multiply by 0.0015 makes the particles return to their original position slower, which creates a more natural and dynamic movement as the particles are attracted back to their original positions while still being influenced by the mouse interaction and explosion effect.
+                    velocity[i + 1] += (targetPosition[i + 1] - y) * 0.0015
+                    velocity[i + 2] += (targetPosition[i + 2] - z) * 0.0015
                 }
 
                 // Damping — slows velocity over time so particles don't fly forever
