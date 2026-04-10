@@ -24,6 +24,8 @@ function Particles() {
     const velocityRef = useRef(new Float32Array(12000 * 3)); //velocity of the particles
     const explodeRef = useRef(false) //flag to trigger explosion
     const explosionStrengthRef = useRef(1) //store 1 in variable 
+    const imagePositionsRef = useRef(null) //store the position of the image
+    const imageColorsRef = useRef(null)
 
     //for explosion on click 
     //useEffect(() => {
@@ -39,14 +41,65 @@ function Particles() {
     //    return () => window.removeEventListener("click", handleClick)
     //}, [])
 
+    //useEffect for image position
+    useEffect(() => {
+        const positions = [];
+        const colors = [];
+        const canvas = document.createElement("canvas"); //get the canvas element from the DOM
+        const ctx = canvas.getContext("2d");//create a 2D rendering context for the canvas, which allows us to draw on it
+        const img = new Image(); //create a new image element
+        img.src = "/1.jpg"; //set the source of the image to the specified path
+        img.onload = () => {
+            const width = 200; //get the width of the canvas
+            const height = 200; //get the height of the canvas
+            canvas.width = width; //set the width of the canvas
+            canvas.height = height; //set the height of the canvas
+            ctx.drawImage(img, 0, 0, width, height); //draw the image onto the canvas at the specified position and size
+            const imageData = ctx.getImageData(0, 0, width, height)
+            for (let y = 0; y < height; y += 2) {
+                for (let x = 0; x < width; x += 2) {
+                    const i = (y * width + x) * 4; //calculate the index of the pixel in the image data array based on its x and y coordinates
+                    const r = imageData.data[i] //get the red value of the pixel
+                    const g = imageData.data[i + 1] //get the green value of the pixel
+                    const b = imageData.data[i + 2] //get the blue value of the pixel
+                    const alpha = imageData.data[i + 3]
+                    if (alpha > 128) {
+                        positions.push(  //converting to 3d
+                            (x - width / 2) * 0.01,
+                            (y - height / 2) * 0.01,
+                            0
+                        )
+                        colors.push(
+                            r / 255,  //divide by 255 to normalize the color values to the range of 0 to 1, which is the expected format for colors in WebGL and Three.js. This allows us to use the color values directly in our shader or material without needing to convert them again.
+                            g / 255,
+                            b / 255
+                        )
+                    }
+                }
+            }
+            imagePositionsRef.current = new Float32Array(positions);
+            imageColorsRef.current = new Float32Array(colors);
+            particlesRef.current.geometry.setAttribute(
+                "position",
+                new THREE.BufferAttribute(imagePositionsRef.current, 3)
+            )
+
+            particlesRef.current.geometry.setAttribute(
+                "color",
+                new THREE.BufferAttribute(imageColorsRef.current, 3)
+            )
+        }
+    }, [])
+
     useFrame((state, delta) => {
 
         explosionStrengthRef.current *= 0.96 //explosion strength decrease over time
         if (particlesRef.current) {
             particlesRef.current.rotation.y += delta * 0.1; // Rotate the particles around the y-axis
             let currentPosition = particlesRef.current.geometry.attributes.position.array;; //current position of the particles
-            const targetPosition = particles.endPositionArray; //target position of the particles
-            //console.log(currentPosition, targetPosition)
+            const targetPosition = imagePositionsRef.current || particles.endPositionArray; //target position of the particles
+            if (!targetPosition) return;
+            console.log(imagePositionsRef.current)
             const velocity = velocityRef.current
 
 
@@ -161,6 +214,9 @@ function Particles() {
                 currentPosition[i + 2] += velocity[i + 2]
             }
             particlesRef.current.geometry.attributes.position.needsUpdate = true;
+            if (particlesRef.current.geometry.attributes.color) {
+                particlesRef.current.geometry.attributes.color.needsUpdate = true;
+            }
             //  console.log(mouse.x, mouse.y)
         }
     })
@@ -195,7 +251,8 @@ function Particles() {
                 <bufferGeometry>
                     <bufferAttribute attach="attributes-position" count={particles.startPositionArray.length / 3} array={particles.startPositionArray} itemSize={3} />
                 </bufferGeometry>
-                <pointsMaterial size={0.02} color={"#9DFFFF"} sizeAttenuation fog blending={THREE.AdditiveBlending} transparent={true} opacity={1.0}
+                <pointsMaterial size={0.02} vertexColors={true} //color={"#9DFFFF"}
+                    sizeAttenuation fog blending={THREE.AdditiveBlending} transparent={true} opacity={1.0}
                     depthWrite={false} />
             </points>
         </>
