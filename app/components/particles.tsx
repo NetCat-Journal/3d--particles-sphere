@@ -23,7 +23,7 @@ function Particles() {
     const { mouse } = useThree();
     const velocityRef = useRef(new Float32Array(12000 * 3)); //velocity of the particles
     const explodeRef = useRef(false) //flag to trigger explosion
-    const explosionStrengthRef = useRef(1) //store 1 in variable 
+    const explosionStrengthRef = useRef(0) //store 1 in variable 
     const imagePositionsRef = useRef(null) //store the position of the image
     const imageColorsRef = useRef(null)
 
@@ -48,26 +48,31 @@ function Particles() {
         const canvas = document.createElement("canvas"); //get the canvas element from the DOM
         const ctx = canvas.getContext("2d");//create a 2D rendering context for the canvas, which allows us to draw on it
         const img = new Image(); //create a new image element
-        img.src = "/1.jpg"; //set the source of the image to the specified path
+        img.src = "/cat-logo.png"; //set the source of the image to the specified path
         img.onload = () => {
-            const width = 200; //get the width of the canvas
-            const height = 200; //get the height of the canvas
+            const width = 300; //get the width of the canvas
+            const height = 300; //get the height of the canvas
             canvas.width = width; //set the width of the canvas
             canvas.height = height; //set the height of the canvas
             ctx.drawImage(img, 0, 0, width, height); //draw the image onto the canvas at the specified position and size
             const imageData = ctx.getImageData(0, 0, width, height)
-            for (let y = 0; y < height; y += 2) {
-                for (let x = 0; x < width; x += 2) {
+            //console.log("First pixel:", imageData.data[0], imageData.data[1], imageData.data[2], imageData.data[3])
+
+            for (let y = 0; y < height; y += 1) {
+                for (let x = 0; x < width; x += 1) {
                     const i = (y * width + x) * 4; //calculate the index of the pixel in the image data array based on its x and y coordinates
                     const r = imageData.data[i] //get the red value of the pixel
                     const g = imageData.data[i + 1] //get the green value of the pixel
                     const b = imageData.data[i + 2] //get the blue value of the pixel
                     const alpha = imageData.data[i + 3]
-                    if (alpha > 128) {
+                    const brightness = (r + g + b) / 3;
+                    if (alpha > 20 && brightness > 30) { //only consider pixels that are not transparent and have a certain brightness level, which helps to create a more visually appealing particle effect by focusing on the more prominent features of the image and ignoring the darker or more transparent areas.
+
                         positions.push(  //converting to 3d
                             (x - width / 2) * 0.01,
-                            (y - height / 2) * 0.01,
+                            -(y - height / 2) * 0.01,
                             0
+                            //brightness * 0.3
                         )
                         colors.push(
                             r / 255,  //divide by 255 to normalize the color values to the range of 0 to 1, which is the expected format for colors in WebGL and Three.js. This allows us to use the color values directly in our shader or material without needing to convert them again.
@@ -77,17 +82,32 @@ function Particles() {
                     }
                 }
             }
-            imagePositionsRef.current = new Float32Array(positions);
-            imageColorsRef.current = new Float32Array(colors);
-            particlesRef.current.geometry.setAttribute(
-                "position",
-                new THREE.BufferAttribute(imagePositionsRef.current, 3)
-            )
+            const particleCount = 12000;
 
+            const imagePositions = new Float32Array(particleCount * 3);
+            const imageColors = new Float32Array(particleCount * 3);
+            console.log("Total image positions:", positions.length / 3)
+            for (let i = 0; i < particleCount; i++) {
+                //const index = (i % (positions.length / 3)) * 3;
+                const index = Math.floor(Math.random() * (positions.length / 3)) * 3;
+                imagePositions[i * 3] = positions[index];
+                imagePositions[i * 3 + 1] = positions[index + 1];
+                imagePositions[i * 3 + 2] = positions[index + 2];
+
+                imageColors[i * 3] = colors[index];
+                imageColors[i * 3 + 1] = colors[index + 1];
+                imageColors[i * 3 + 2] = colors[index + 2];
+            }
+
+            imagePositionsRef.current = imagePositions;
+            imageColorsRef.current = imageColors;
+
+            // ✅ set ONLY color (NOT position)
             particlesRef.current.geometry.setAttribute(
                 "color",
                 new THREE.BufferAttribute(imageColorsRef.current, 3)
-            )
+            );
+
         }
     }, [])
 
@@ -95,7 +115,7 @@ function Particles() {
 
         explosionStrengthRef.current *= 0.96 //explosion strength decrease over time
         if (particlesRef.current) {
-            particlesRef.current.rotation.y += delta * 0.1; // Rotate the particles around the y-axis
+            //particlesRef.current.rotation.y += delta * 0.1; // Rotate the particles around the y-axis
             let currentPosition = particlesRef.current.geometry.attributes.position.array;; //current position of the particles
             const targetPosition = imagePositionsRef.current || particles.endPositionArray; //target position of the particles
             if (!targetPosition) return;
@@ -183,15 +203,15 @@ function Particles() {
                 }
 
                 if (explosionStrengthRef.current < 0.2) { //return of particles  
-                    velocity[i] += (targetPosition[i] - x) * 0.0015 //multiply by 0.0015 makes the particles return to their original position slower, which creates a more natural and dynamic movement as the particles are attracted back to their original positions while still being influenced by the mouse interaction and explosion effect.
-                    velocity[i + 1] += (targetPosition[i + 1] - y) * 0.0015
-                    velocity[i + 2] += (targetPosition[i + 2] - z) * 0.0015
+                    velocity[i] += (targetPosition[i] - x) * 0.08 //multiply by 0.0015 makes the particles return to their original position slower, which creates a more natural and dynamic movement as the particles are attracted back to their original positions while still being influenced by the mouse interaction and explosion effect.
+                    velocity[i + 1] += (targetPosition[i + 1] - y) * 0.08
+                    velocity[i + 2] += (targetPosition[i + 2] - z) * 0.08
                 }
 
                 // Damping — slows velocity over time so particles don't fly forever
-                velocity[i] *= 0.96
-                velocity[i + 1] *= 0.96
-                velocity[i + 2] *= 0.96
+                velocity[i] *= 0.88
+                velocity[i + 1] *= 0.88
+                velocity[i + 2] *= 0.88
 
                 const maxSpeed = 0.05
 
@@ -224,6 +244,7 @@ function Particles() {
     const particles = useMemo(() => {
         const startPositionArray = new Float32Array(12000 * 3);
         const particleArray = new Float32Array(12000 * 3);
+        const colorArray = new Float32Array(12000 * 3).fill(1);
         const r = 1.5;
 
         for (let i = 0; i < particleArray.length; i += 3) {
@@ -243,15 +264,16 @@ function Particles() {
             particleArray[i + 1] = y
             particleArray[i + 2] = z
         }
-        return { endPositionArray: particleArray, startPositionArray: startPositionArray };
+        return { endPositionArray: particleArray, startPositionArray: startPositionArray, colorArray: colorArray };
     }, [])
     return (
         <>
             <points ref={particlesRef}>
                 <bufferGeometry>
                     <bufferAttribute attach="attributes-position" count={particles.startPositionArray.length / 3} array={particles.startPositionArray} itemSize={3} />
+                    <bufferAttribute attach="attributes-color" count={12000} array={particles.colorArray} itemSize={3} />
                 </bufferGeometry>
-                <pointsMaterial size={0.02} vertexColors={true} //color={"#9DFFFF"}
+                <pointsMaterial size={0.05} vertexColors={true} //color={"#9DFFFF"}
                     sizeAttenuation fog blending={THREE.AdditiveBlending} transparent={true} opacity={1.0}
                     depthWrite={false} />
             </points>
