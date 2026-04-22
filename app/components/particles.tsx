@@ -8,8 +8,9 @@
 //depthWrite={false} particles dont hide each other they particles stack like light
 //transparent={true} allows the particles to be transparent, which is essential for achieving the desired visual effect when using additive blending. This ensures that the particles can blend together and create a glowing effect without being completely opaque.   
 //opacity={1.0} sets the opacity of the particles to 1, making them fully visible. This is important for achieving the desired visual effect when using additive blending, as it allows the particles to blend together and create a glowing effect without being completely transparent.   
-
-
+//Alpha = 0 means invisible, 255 means solid
+//Darkest possible:R=0, G=0, B=0 (0 + 0 + 0) / 3 = 0, Brightest possible:R=255, G=255, B=255(255 + 255 + 255) / 3 = 255
+// if image with particle to small or to big need to ajast the camera in canvas and also scale here positions.push((x - width / 2) * 0.02...
 
 import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
@@ -19,9 +20,10 @@ import { useEffect } from "react";
 
 
 function Particles() {
+    const PARTICLE_COUNT = 12000;
     const particlesRef = useRef(null);
     const { mouse } = useThree();
-    const velocityRef = useRef(new Float32Array(12000 * 3)); //velocity of the particles
+    const velocityRef = useRef(new Float32Array(PARTICLE_COUNT * 3)); //velocity of the particles
     const explodeRef = useRef(false) //flag to trigger explosion
     const explosionStrengthRef = useRef(0) //store 1 in variable 
     const imagePositionsRef = useRef(null) //store the position of the image
@@ -57,7 +59,12 @@ function Particles() {
             ctx.drawImage(img, 0, 0, width, height); //draw the image onto the canvas at the specified position and size
             const imageData = ctx.getImageData(0, 0, width, height)
             //console.log("First pixel:", imageData.data[0], imageData.data[1], imageData.data[2], imageData.data[3])
-
+            console.log("Center pixel:",
+                imageData.data[((150 * 300) + 150) * 4],
+                imageData.data[((150 * 300) + 150) * 4 + 1],
+                imageData.data[((150 * 300) + 150) * 4 + 2],
+                imageData.data[((150 * 300) + 150) * 4 + 3]
+            )
             for (let y = 0; y < height; y += 1) {
                 for (let x = 0; x < width; x += 1) {
                     const i = (y * width + x) * 4; //calculate the index of the pixel in the image data array based on its x and y coordinates
@@ -66,12 +73,15 @@ function Particles() {
                     const b = imageData.data[i + 2] //get the blue value of the pixel
                     const alpha = imageData.data[i + 3]
                     const brightness = (r + g + b) / 3;
-                    if (alpha > 20 && brightness > 30) { //only consider pixels that are not transparent and have a certain brightness level, which helps to create a more visually appealing particle effect by focusing on the more prominent features of the image and ignoring the darker or more transparent areas.
 
+                    //const isBackground = r < 30 && g < 30 && b < 50
+
+                    if (alpha > 128 && brightness > 100) { //only consider pixels that are not transparent and have a certain brightness level, which helps to create a more visually appealing particle effect by focusing on the more prominent features of the image and ignoring the darker or more transparent areas.
+                        console.log(`pixel ${brightness}: r=${r} g=${g} b=${b} a=${alpha}`)
                         positions.push(  //converting to 3d
-                            (x - width / 2) * 0.01,
-                            -(y - height / 2) * 0.01,
-                            0
+                            (x - width / 2) * 0.02, //center the image by subtracting half of the width and height from the x and y coordinates, and then scale it down by multiplying by 0.03 to fit within the desired space in the 3D scene. This allows us to create a particle system that accurately represents the shape and details of the original image while maintaining a manageable size for rendering.
+                            -(y - height / 2) * 0.02,
+                            (Math.random() - 0.5) * 0.005
                             //brightness * 0.3
                         )
                         colors.push(
@@ -82,12 +92,12 @@ function Particles() {
                     }
                 }
             }
-            const particleCount = 12000;
+            //const particleCount = 12000;
 
-            const imagePositions = new Float32Array(particleCount * 3);
-            const imageColors = new Float32Array(particleCount * 3);
-            console.log("Total image positions:", positions.length / 3)
-            for (let i = 0; i < particleCount; i++) {
+            const imagePositions = new Float32Array(PARTICLE_COUNT * 3);
+            const imageColors = new Float32Array(PARTICLE_COUNT * 3);
+            //console.log("Total image positions:", positions.length / 3)
+            for (let i = 0; i < PARTICLE_COUNT; i++) {
                 //const index = (i % (positions.length / 3)) * 3;
                 const index = Math.floor(Math.random() * (positions.length / 3)) * 3;
                 imagePositions[i * 3] = positions[index];
@@ -119,7 +129,6 @@ function Particles() {
             let currentPosition = particlesRef.current.geometry.attributes.position.array;; //current position of the particles
             const targetPosition = imagePositionsRef.current || particles.endPositionArray; //target position of the particles
             if (!targetPosition) return;
-            console.log(imagePositionsRef.current)
             const velocity = velocityRef.current
 
 
@@ -242,9 +251,9 @@ function Particles() {
     })
 
     const particles = useMemo(() => {
-        const startPositionArray = new Float32Array(12000 * 3);
-        const particleArray = new Float32Array(12000 * 3);
-        const colorArray = new Float32Array(12000 * 3).fill(1);
+        const startPositionArray = new Float32Array(PARTICLE_COUNT * 3);
+        const particleArray = new Float32Array(PARTICLE_COUNT * 3);
+        const colorArray = new Float32Array(PARTICLE_COUNT * 3).fill(1);
         const r = 1.5;
 
         for (let i = 0; i < particleArray.length; i += 3) {
@@ -271,10 +280,11 @@ function Particles() {
             <points ref={particlesRef}>
                 <bufferGeometry>
                     <bufferAttribute attach="attributes-position" count={particles.startPositionArray.length / 3} array={particles.startPositionArray} itemSize={3} />
-                    <bufferAttribute attach="attributes-color" count={12000} array={particles.colorArray} itemSize={3} />
+                    <bufferAttribute attach="attributes-color" count={PARTICLE_COUNT} array={particles.colorArray} itemSize={3} />
                 </bufferGeometry>
-                <pointsMaterial size={0.05} vertexColors={true} //color={"#9DFFFF"}
-                    sizeAttenuation fog blending={THREE.AdditiveBlending} transparent={true} opacity={1.0}
+                <pointsMaterial size={0.02} vertexColors={true} //color={"#9DFFFF"}
+                    sizeAttenuation transparent={true}          // removed  blending={THREE.AdditiveBlending} for additive blending, which allows the particles to blend together and create a glowing effect. This is particularly effective for creating a sense of depth and luminosity in the particle system.Removed because when converting img to particles this effect create just purple particles not cyan and pink like on the image, but you can add it back for more glowing effect if you want, just change the color to cyan or pink
+                    opacity={1.0}
                     depthWrite={false} />
             </points>
         </>

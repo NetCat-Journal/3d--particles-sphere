@@ -9,7 +9,7 @@ import Particles from './components/particles';
 export default function Home() {
   return (
     <div className='w-full h-screen bg-[#110828]'>
-      <Canvas camera={{ position: [0, 0, 4] }} dpr={[1, 2]}>
+      <Canvas camera={{ position: [0, 0, 3] }} dpr={[1, 2]}>
         <fog attach="fog" args={['#110828', 2, 4]} />
         <OrbitControls />
         <Particles />
