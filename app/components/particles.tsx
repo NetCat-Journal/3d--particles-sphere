@@ -20,7 +20,7 @@ import { useEffect } from "react";
 
 
 function Particles() {
-    const PARTICLE_COUNT = 12000;
+    const PARTICLE_COUNT = 16000;
     const particlesRef = useRef(null);
     const { mouse } = useThree();
     const velocityRef = useRef(new Float32Array(PARTICLE_COUNT * 3)); //velocity of the particles
@@ -85,9 +85,9 @@ function Particles() {
                             //brightness * 0.3
                         )
                         colors.push(
-                            r / 255,  //divide by 255 to normalize the color values to the range of 0 to 1, which is the expected format for colors in WebGL and Three.js. This allows us to use the color values directly in our shader or material without needing to convert them again.
-                            g / 255,
-                            b / 255
+                            r / 255 * 1.2,  //divide by 255 to normalize the color values to the range of 0 to 1, which is the expected format for colors in WebGL and Three.js. This allows us to use the color values directly in our shader or material without needing to convert them again.
+                            g / 255 * 1.2, //multiply by 1.4 to increse brighteness of the particles, since the original image is quite dark, this will help to make the particles more visible and vibrant in the 3D scene. Adjusting the brightness can enhance the overall visual impact of the particle system and make it more engaging for viewers.
+                            b / 255 * 1.2
                         )
                     }
                 }
@@ -283,8 +283,8 @@ function Particles() {
                     <bufferAttribute attach="attributes-color" count={PARTICLE_COUNT} array={particles.colorArray} itemSize={3} />
                 </bufferGeometry>
                 <pointsMaterial size={0.02} vertexColors={true} //color={"#9DFFFF"}
-                    sizeAttenuation transparent={true}          // removed  blending={THREE.AdditiveBlending} for additive blending, which allows the particles to blend together and create a glowing effect. This is particularly effective for creating a sense of depth and luminosity in the particle system.Removed because when converting img to particles this effect create just purple particles not cyan and pink like on the image, but you can add it back for more glowing effect if you want, just change the color to cyan or pink
-                    opacity={1.0}
+                    sizeAttenuation transparent={true} blending={THREE.AdditiveBlending}       // removed  blending={THREE.AdditiveBlending} for additive blending, which allows the particles to blend together and create a glowing effect. This is particularly effective for creating a sense of depth and luminosity in the particle system.Removed because when converting img to particles this effect create just purple particles not cyan and pink like on the image, but you can add it back for more glowing effect if you want, just change the color to cyan or pink
+                    opacity={0.5}
                     depthWrite={false} />
             </points>
         </>
